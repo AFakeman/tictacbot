@@ -1,0 +1,5 @@
+Pillow
+python-telegram-bot
+redis
+https://github.com/AFakeman/redis-map/archive/master.zip
+pyyaml
