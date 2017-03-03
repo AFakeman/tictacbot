@@ -4,7 +4,7 @@ from io import BytesIO
 
 class TicTacToe:
     def __init__(self, field=None, field_size=3):
-        if field_size not in range(3, 50):
+        if field_size not in range(3, 51):
             raise GameError("Invalid field size. Field size should be between 3 and 50.")
         if field:
             self.field = [i for i in field]

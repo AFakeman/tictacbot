@@ -36,18 +36,18 @@ def get_client(client):
 
 @bot.command_handler(
     command='start',
-    doc="/start <size> <side> - start with a <size> cell field (between 3 and 50), <side> is x or o. X's go first!",
+    doc="/start <size> (<side>) - start with a <size> cell field (between 3 and 50), <side> is x or o. X's go first!",
     pass_args=True
 )
 @arguments((int, str), (int,), ())
 def start_game(update, args):
     if not args:
-        return "Hello! Type start <size> <side> to play the game, or use /help!"
+        return "Hello! Type start <size> to play the game, or use /help!"
     size = args[0]
     if len(args) == 2:
         start = args[1]
     else:
-        start = "x"
+        start = choice["x", "o"]
     client = get_client(update.message.chat_id)
     if client["board"]:
         return "You still have a game playing."
@@ -57,6 +57,7 @@ def start_game(update, args):
         raise ValueError("Invalid starting piece")
     board = TicTacToe(field_size=size)
     if start == 'o' and client["bot"].decode('ascii') == 'on':
+        print("kek")
         TicTacPlayer.move(board)
     print(client)
     client["board"] = repr(board)
@@ -81,6 +82,7 @@ def process_move(update, args):
         raise GameError("Game is over, let it go. Or /start another one.")
     board.move(x - 1, y - 1)
     if not board.end and client["bot"].decode('ascii') == "on":
+        print("kek")
         TicTacPlayer.move(board)
     client["board"] = repr(board)
     img = board.img()
