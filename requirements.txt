@@ -1,5 +1,5 @@
 Pillow
 python-telegram-bot
 redis
-git+https://github.com/AFakeman/tictacbot.git
+https://github.com/AFakeman/redis-map/archive/0.2.0.zip
 pyyaml

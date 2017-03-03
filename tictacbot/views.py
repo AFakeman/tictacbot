@@ -137,13 +137,15 @@ def disagree(update):
     pass_args=True,
     doc="/bot <on/off> - turn bot on and off. You cannot start the game as o's when the bot is off!"
 )
-@arguments((str,))
+@arguments((str,), ())
 def toggle_bot(update, args):
     client = get_client(update.message.chat_id)
+    if not args:
+        return "Bot is {0} now.".format(client["bot"].decode('ascii'))
     mode = args[0]
     if mode not in ["on", "off"]:
         raise ParseError("Bot can be either on or off.")
-    if mode == client["bot"]:
+    if mode == client["bot"].decode('ascii'):
         return "Bot is already {0}.".format(mode)
     else:
         client["bot"] = mode
