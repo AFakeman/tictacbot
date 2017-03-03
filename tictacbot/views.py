@@ -47,7 +47,7 @@ def start_game(update, args):
     if len(args) == 2:
         start = args[1]
     else:
-        start = choice["x", "o"]
+        start = choice(["x", "o"])
     client = get_client(update.message.chat_id)
     if client["board"]:
         return "You still have a game playing."
@@ -57,9 +57,7 @@ def start_game(update, args):
         raise ValueError("Invalid starting piece")
     board = TicTacToe(field_size=size)
     if start == 'o' and client["bot"].decode('ascii') == 'on':
-        print("kek")
         TicTacPlayer.move(board)
-    print(client)
     client["board"] = repr(board)
     return [("img", board.img())]
 
@@ -88,7 +86,7 @@ def process_move(update, args):
     img = board.img()
     reply = [("img", img)]
     if board.end:
-        game_result, param = board.check_win()
+        game_result, param = board.check_win(board.field)
         if game_result == "tie":
             reply.append("It's a tie!")
         else:
@@ -119,6 +117,7 @@ def agree(update):
         client["another_one"] = ""
         board = client["board"]
         size = int(len(board) ** 0.5)
+        client["board"] = ""
         return start_game(update, (size, choice(['x','o'])))
     else:
         return "Huh?"
@@ -129,6 +128,7 @@ def disagree(update):
     client = get_client(update.message.chat_id)
     if client["another_one"]:
         client["another_one"] = ""
+        client["board"] = ""
         return "You must be busy. Maybe other time."
     else:
         return "Huh?"

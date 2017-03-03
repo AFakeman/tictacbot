@@ -2,6 +2,24 @@ from .exception import GameError
 from PIL import Image, ImageDraw
 from io import BytesIO
 
+
+def xy(size, x, y):
+    return size * y + x
+
+def inspect(field, speed, start, field_size):
+    count = {"_": 0, "x": 0, "o": 0}
+    speed_x = speed[0]
+    speed_y = speed[1]
+    x = start[0]
+    y = start[1]
+    while(x < field_size and y < field_size):
+        count[field[xy(field_size, x, y)]] += 1
+        x += speed_x
+        y += speed_y
+    return count
+
+
+
 class TicTacToe:
     def __init__(self, field=None, field_size=3):
         if field_size not in range(3, 51):
@@ -20,10 +38,11 @@ class TicTacToe:
             self.turn = 'o'
         else:
             raise GameError("Invalid game state")
-        self.end = self.check_win()
+        self.end = self.check_win(self.field)
 
     def xy(self, x, y):
-        return self.field_size * y + x
+        return xy(self.field_size, x, y)
+
 
     @staticmethod
     def opposite(player):
@@ -45,54 +64,37 @@ class TicTacToe:
             raise GameError("Cell is taken")
         self.field[self.xy(x, y)] = self.turn
         self.turn = self.opposite(self.turn)
-        self.end = self.check_win()
+        self.end = self.check_win(self.field)
 
-    def check_win(self):
-        for x in range(self.field_size):
-            flag = self.field[x]
-            for y in range(self.field_size):
-                coord = self.xy(x, y)
-                if self.field[coord] != flag or self.field[coord] == '_':
-                    flag = None
-                    break
-            if flag:
+    @staticmethod
+    def check_win(field):
+        field_size = int(len(field) ** 0.5)
+        vert_counts = [inspect(field, (0, 1), (i, 0), field_size) for i in range(field_size)]
+        hor_counts = [inspect(field, (1, 0), (0, i), field_size) for i in range(field_size)]
+        diag1_count = inspect(field, (1, 1), (0, 0), field_size)
+        diag2_count = inspect(field, (1, -1), (0, field_size - 1), field_size)
+
+        empty_count = 0
+
+        for x in range(field_size):
+            empty_count += vert_counts[x]['_']
+            if vert_counts[x]['x'] == field_size or vert_counts[x]['o'] == field_size:
                 return "vert", x
 
-        for y in range(self.field_size):
-            flag = self.field[self.xy(0, y)]
-            for x in range(self.field_size):
-                coord = self.xy(x, y)
-                if self.field[coord] != flag or self.field[coord] == '_':
-                    flag = None
-                    break
-            if flag:
+        for y in range(field_size):
+            if hor_counts[y]['x'] == field_size or hor_counts[y]['o'] == field_size:
                 return "hor", y
 
-        flag = self.field[self.xy(0, 0)]
-        for i in range(self.field_size):
-            coord = self.xy(i, i)
-            if self.field[coord] != flag or self.field[coord] == '_':
-                flag = None
-                break
-        if flag:
+        if diag1_count['x'] == field_size or diag1_count['o'] == field_size:
             return "diag", 1
 
-        flag = self.field[self.xy(self.field_size - 1, 0)]
-        for i in range(self.field_size):
-            coord = self.xy(self.field_size - 1 - i, i)
-            if self.field[coord] != flag or self.field[coord] == '_':
-                flag = None
-                break
-        if flag:
+        if diag2_count['x'] == field_size or diag2_count['o'] == field_size:
             return "diag", 2
 
-        for i in range(self.field_size ** 2):
-            flag = True
-            if self.field[i] == '_':
-                flag = None
-                break
-        if flag:
+        if empty_count == 0:
             return "tie", 0
+
+        return False
 
     def __str__(self):
         build = []
