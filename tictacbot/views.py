@@ -6,50 +6,58 @@ from .exception import ParseError, GameError
 from io import BytesIO, BufferedReader
 from random import choice
 
-def arguments(*types):
+def arguments(*arg_types):
+    types = {len(pair):pair for pair in arg_types}
     def decorator(func):
         def wrapper(update, args):
-            if len(args) != len(types):
-                raise ParseError("Insufficient arguments")
+            if len(args) not in types:
+                raise ParseError("Invalid arguments")
             parsed = []
             for i in range(len(args)):
                 try:
-                    if types[i]:
-                        parsed.append(types[i](args[i]))
+                    if types[len(args)][i]:
+                        parsed.append(types[len(args)][i](args[i]))
                     else:
                         parsed.append(args[i])
                 except:
                     raise ParseError(str(args[i]))
-            return func(update, *tuple(parsed))
+            return func(update, tuple(parsed))
         return wrapper
     return decorator
 
 
 @bot.command_handler(
     command='start',
-    doc="start <size> <start>",
+    doc="/start <size> <side> - start with a <size> cell field, <side> is x or o. X's go first!",
     pass_args=True
 )
-@arguments(int, str)
-def start_game(update, size, start):
-    if update.message.chat_id in another_one:
-        del(another_one[update.message.chat_id])
-    if start not in ['o', 'x']:
-        raise ValueError("Invalid starting piece")
-    board = TicTacToe(field_size=size)
-    if start == 'o':
-        TicTacPlayer.move(board)
-    boards[update.message.chat_id] = repr(board)
-    return [("img", board.img())]
+@arguments((int, str), ())
+def start_game(update, args):
+    if args:
+        size = args[0]
+        start = args[1]
+        if update.message.chat_id in another_one:
+            del(another_one[update.message.chat_id])
+        if start not in ['o', 'x']:
+            raise ValueError("Invalid starting piece")
+        board = TicTacToe(field_size=size)
+        if start == 'o':
+            TicTacPlayer.move(board)
+        boards[update.message.chat_id] = repr(board)
+        return [("img", board.img())]
+    else:
+        return "Hello! Type start <size> <side> to play the game, or use /help!"
 
 
 @bot.command_handler(
     command='move',
-    doc="move <x> <y>",
+    doc="/move <x> <y> - place a tile at coordinates",
     pass_args=True
 )
-@arguments(int, int)
-def process_move(update, x, y):
+@arguments((int, int))
+def process_move(update, args):
+    x = args[0]
+    y = args[1]
     if update.message.chat_id not in boards:
         raise GameError("You are not playing")
     board = TicTacToe(boards[update.message.chat_id].decode("ascii"))
@@ -62,14 +70,19 @@ def process_move(update, x, y):
     img = board.img()
     reply = [("img", img)]
     if board.end:
-        reply.append("Game is over! {0}'s won! Another one (/yes or /no)?".format(board.opposite(board.turn)))
+        game_result, param = board.check_win()
+        if game_result == "tie":
+            reply.append("It's a tie!")
+        else:
+            reply.append("Game is over! {0}'s won!".format(board.opposite(board.turn)))
+        reply.append("Another one (/yes or /no)?")
         another_one[update.message.chat_id] = True
     return reply
 
 
 @bot.command_handler(
     command='end_game',
-    doc="end_game",
+    doc="/end_game - stop current game. /start will work anyway, though.",
     pass_args=True
 )
 def end_game(update, args):

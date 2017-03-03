@@ -1,6 +1,7 @@
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler
 from sys import stdout
+from .exception import ParseError, GameError
 import logging
 
 class TelegramBot:
@@ -12,7 +13,7 @@ class TelegramBot:
         self.token = token
         self.updater = Updater(token=self.token)
         self.dispatcher = self.updater.dispatcher
-        self.help = ["help"]
+        self.help = ["/help - show this message."]
         help_handler = CommandHandler("help", self.help_func)
         self.dispatcher.add_handler(help_handler)
         logging.basicConfig(
@@ -30,6 +31,10 @@ class TelegramBot:
                         result = func(update, args)
                     else:
                         result = func(update)
+                except GameError as e:
+                    result = str(e)
+                except ParseError as e:
+                    result = "Couldn't process arguments. Are you sure you are typing the command correctly?"
                 except Exception as e:
                     result = "Error: {0}".format(str(e))
                 if result:
@@ -62,7 +67,6 @@ class TelegramBot:
             if obj[0] == "img":
                 bot.sendPhoto(chat_id=chat, photo=obj[1])
         else:
-            print(obj)
             for i in obj:
                 if i:
                     self.send(bot, i, chat)

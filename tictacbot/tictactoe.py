@@ -149,14 +149,13 @@ class TicTacToe:
             elif direction == "hor":
                 x_low = 0
                 x_high = width - 1
-                y_low = y_high = coord * (cell_size + border_width) + int(border_width/2)
+                y_low = y_high = coord * (cell_size + border_width) + int(cell_size / 2)
                 draw.line([x_low, y_low, x_high, y_high], width=won_width)
             elif direction == "vert":
                 y_low = 0
                 y_high = width - 1
-                x_low = x_high = coord * (cell_size + border_width) + int(border_width / 2)
+                x_low = x_high = coord * (cell_size + border_width) + int(cell_size / 2)
                 draw.line([x_low, y_low, x_high, y_high], width=won_width)
-
 
         buffer = BytesIO()
         image.save(buffer, format="png")
