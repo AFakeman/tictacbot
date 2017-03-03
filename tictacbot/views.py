@@ -56,7 +56,7 @@ def start_game(update, args):
     if start not in ['o', 'x']:
         raise ValueError("Invalid starting piece")
     board = TicTacToe(field_size=size)
-    if start == 'o' and client["bot"] == 'on':
+    if start == 'o' and client["bot"].decode('ascii') == 'on':
         TicTacPlayer.move(board)
     print(client)
     client["board"] = repr(board)
@@ -80,7 +80,7 @@ def process_move(update, args):
     if board.end:
         raise GameError("Game is over, let it go. Or /start another one.")
     board.move(x - 1, y - 1)
-    if not board.end and client["bot"] == "on":
+    if not board.end and client["bot"].decode('ascii') == "on":
         TicTacPlayer.move(board)
     client["board"] = repr(board)
     img = board.img()
