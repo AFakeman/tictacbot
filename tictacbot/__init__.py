@@ -1,6 +1,6 @@
 import yaml
 from redis_map import RedisMap
-from .bot import TicTacBot
+from .bot import TelegramBot
 import os.path
 
 if os.path.exists('config.yml'):
@@ -16,7 +16,7 @@ else:
     with open('config.yml', 'w') as f:
         yaml.dump(config, f)
 
-bot = TicTacBot(config["api_key"])
+bot = TelegramBot(config["api_key"])
 boards = RedisMap(host=config["redis_host"], port=config["redis_port"], name="boards")
 another_one = RedisMap(host=config["redis_host"], port=config["redis_port"], name="another_one")
 from . import views

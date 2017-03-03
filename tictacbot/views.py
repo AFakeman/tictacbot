@@ -25,10 +25,15 @@ def arguments(*types):
     return decorator
 
 
-@bot.command_handler('start', doc=
-        """start <size> <start>""")
+@bot.command_handler(
+    command='start',
+    doc="start <size> <start>",
+    pass_args=True
+)
 @arguments(int, str)
-def process_hello(update, size, start):
+def start_game(update, size, start):
+    if update.message.chat_id in another_one:
+        del(another_one[update.message.chat_id])
     if start not in ['o', 'x']:
         raise ValueError("Invalid starting piece")
     board = TicTacToe(field_size=size)
@@ -38,8 +43,11 @@ def process_hello(update, size, start):
     return [("img", board.img())]
 
 
-@bot.command_handler('move', doc=
-        """move <x> <y>""")
+@bot.command_handler(
+    command='move',
+    doc="move <x> <y>",
+    pass_args=True
+)
 @arguments(int, int)
 def process_move(update, x, y):
     if update.message.chat_id not in boards:
@@ -59,8 +67,11 @@ def process_move(update, x, y):
     return reply
 
 
-@bot.command_handler('end_game', doc=
-        """end_game""")
+@bot.command_handler(
+    command='end_game',
+    doc="end_game",
+    pass_args=True
+)
 def end_game(update, args):
     if update.message.chat_id in boards:
         del(boards[update.message.chat_id])
@@ -70,22 +81,24 @@ def end_game(update, args):
 
 
 @bot.command_handler('yes')
-def agree(update, args):
+def agree(update):
     if update.message.chat_id in another_one:
         del(another_one[update.message.chat_id])
         board = boards[update.message.chat_id]
         size = int(len(board) ** 0.5)
-        return process_hello(update, (size, choice(['x','o'])))
+        return start_game(update, (size, choice(['x','o'])))
     else:
         return "Huh?"
 
+
 @bot.command_handler('no')
-def agree(update, args):
+def disagree(update):
     if update.message.chat_id in another_one:
         del(another_one[update.message.chat_id])
         return "You must be busy. Maybe other time."
     else:
         return "Huh?"
+
 
 @bot.message_handler(Filters.command)
 def process_unknown(update):

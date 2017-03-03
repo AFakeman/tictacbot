@@ -56,7 +56,7 @@ class TicTacToe:
                     flag = None
                     break
             if flag:
-                return True
+                return "vert", x
 
         for y in range(self.field_size):
             flag = self.field[self.xy(0, y)]
@@ -66,7 +66,7 @@ class TicTacToe:
                     flag = None
                     break
             if flag:
-                return True
+                return "hor", y
 
         flag = self.field[self.xy(0, 0)]
         for i in range(self.field_size):
@@ -75,7 +75,7 @@ class TicTacToe:
                 flag = None
                 break
         if flag:
-            return True
+            return "diag", 1
 
         flag = self.field[self.xy(self.field_size - 1, 0)]
         for i in range(self.field_size):
@@ -83,9 +83,16 @@ class TicTacToe:
             if self.field[coord] != flag or self.field[coord] == '_':
                 flag = None
                 break
-
         if flag:
-            return True
+            return "diag", 2
+
+        for i in range(self.field_size ** 2):
+            flag = True
+            if self.field[i] == '_':
+                flag = None
+                break
+        if flag:
+            return "tie", 0
 
     def __str__(self):
         build = []
@@ -106,7 +113,7 @@ class TicTacToe:
         else:
             return
 
-    def img(self, cell_size=50, border_width=1, x_width=1, o_width=1):
+    def img(self, cell_size=50, border_width=1, x_width=1, o_width=1, won_width=5):
         width = cell_size * self.field_size + border_width * (self.field_size - 1)
         size = (width, width)
         image = Image.new("1", size, 1)
@@ -128,6 +135,29 @@ class TicTacToe:
                     draw.line([x_low, y_high, x_high, y_low], width=x_width)
                 elif self[self.xy(x,y)] == 'o':
                     draw.ellipse([x_low, y_low, x_high, y_high])
+        if self.end:
+            direction, coord = self.end
+            if direction == "diag":
+                x_low = 0
+                x_high = width - 1
+                y_low = 0
+                y_high = width - 1
+                if coord == 1:
+                    draw.line([x_low, y_low, x_high, y_high], width=won_width)
+                elif coord == 2:
+                    draw.line([x_low, y_high, x_high, y_low], width=won_width)
+            elif direction == "hor":
+                x_low = 0
+                x_high = width - 1
+                y_low = y_high = coord * (cell_size + border_width) + int(border_width/2)
+                draw.line([x_low, y_low, x_high, y_high], width=won_width)
+            elif direction == "vert":
+                y_low = 0
+                y_high = width - 1
+                x_low = x_high = coord * (cell_size + border_width) + int(border_width / 2)
+                draw.line([x_low, y_low, x_high, y_high], width=won_width)
+
+
         buffer = BytesIO()
         image.save(buffer, format="png")
         buffer.seek(0)
