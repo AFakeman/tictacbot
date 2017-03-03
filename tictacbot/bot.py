@@ -1,6 +1,7 @@
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler
-
+from sys import stdout
+import logging
 
 class TelegramBot:
     def help_func(self, bot, update):
@@ -14,6 +15,9 @@ class TelegramBot:
         self.help = ["help"]
         help_handler = CommandHandler("help", self.help_func)
         self.dispatcher.add_handler(help_handler)
+        logging.basicConfig(
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            level=logging.INFO)
 
     def run(self):
         self.updater.start_polling()
