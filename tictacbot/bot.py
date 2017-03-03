@@ -34,7 +34,8 @@ class TelegramBot:
                 except GameError as e:
                     result = str(e)
                 except ParseError as e:
-                    result = "Couldn't process arguments. Are you sure you are typing the command correctly?"
+                    result = "Couldn't process arguments ({0}). \
+                              Are you sure you are typing the command correctly?".format(str(e))
                 except Exception as e:
                     result = "Error: {0}".format(str(e))
                 if result:

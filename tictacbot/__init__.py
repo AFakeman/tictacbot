@@ -1,5 +1,5 @@
 import yaml
-from redis_map import RedisMap
+from redis_map import RedisUniterableMap
 from .bot import TelegramBot
 import os.path
 
@@ -17,6 +17,5 @@ else:
         yaml.dump(config, f)
 
 bot = TelegramBot(config["api_key"])
-boards = RedisMap(host=config["redis_host"], port=config["redis_port"], name="boards")
-another_one = RedisMap(host=config["redis_host"], port=config["redis_port"], name="another_one")
+info = RedisUniterableMap(host=config["redis_host"], port=config["redis_port"], base_key="info")
 from . import views
