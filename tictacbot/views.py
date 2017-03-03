@@ -29,7 +29,8 @@ def get_client(client):
     if client not in info:
         info[client] = {
             "another_one": "",
-            "board": ""
+            "board": "",
+            "bot": "on"
         }
     return info[client]
 
@@ -38,24 +39,29 @@ def get_client(client):
     doc="/start <size> <side> - start with a <size> cell field (between 3 and 50), <side> is x or o. X's go first!",
     pass_args=True
 )
-@arguments((int, str), ())
+@arguments((int, str), (int,), ())
 def start_game(update, args):
-    if args:
-        client = get_client(update.message.chat_id)
-        size = args[0]
-        start = args[1]
-        if client["another_one"]:
-            client["another_one"] = ""
-        if start not in ['o', 'x']:
-            raise ValueError("Invalid starting piece")
-        board = TicTacToe(field_size=size)
-        if start == 'o':
-            TicTacPlayer.move(board)
-        print(client)
-        client["board"] = repr(board)
-        return [("img", board.img())]
-    else:
+    if not args:
         return "Hello! Type start <size> <side> to play the game, or use /help!"
+    size = args[0]
+    if len(args) == 2:
+        start = args[1]
+    else:
+        start = "x"
+    client = get_client(update.message.chat_id)
+    if client["board"]:
+        return "You still have a game playing."
+    if client["another_one"]:
+        client["another_one"] = ""
+    if start not in ['o', 'x']:
+        raise ValueError("Invalid starting piece")
+    board = TicTacToe(field_size=size)
+    if start == 'o' and client["bot"] == 'on':
+        TicTacPlayer.move(board)
+    print(client)
+    client["board"] = repr(board)
+    return [("img", board.img())]
+
 
 
 @bot.command_handler(
@@ -74,7 +80,7 @@ def process_move(update, args):
     if board.end:
         raise GameError("Game is over, let it go. Or /start another one.")
     board.move(x - 1, y - 1)
-    if not board.end:
+    if not board.end and client["bot"] == "on":
         TicTacPlayer.move(board)
     client["board"] = repr(board)
     img = board.img()
@@ -92,7 +98,7 @@ def process_move(update, args):
 
 @bot.command_handler(
     command='end_game',
-    doc="/end_game - stop current game. /start works anyway, though.",
+    doc="/end_game - stop current game.",
     pass_args=True
 )
 def end_game(update, args):
@@ -124,6 +130,24 @@ def disagree(update):
         return "You must be busy. Maybe other time."
     else:
         return "Huh?"
+
+
+@bot.command_handler(
+    command='bot',
+    pass_args=True,
+    doc="/bot <on/off> - turn bot on and off. You cannot start the game as o's when the bot is off!"
+)
+@arguments((str,))
+def toggle_bot(update, args):
+    client = get_client(update.message.chat_id)
+    mode = args[0]
+    if mode not in ["on", "off"]:
+        raise ParseError("Bot can be either on or off.")
+    if mode == client["bot"]:
+        return "Bot is already {0}.".format(mode)
+    else:
+        client["bot"] = mode
+        return "Bot is {0} now.".format(mode)
 
 
 @bot.message_handler(Filters.command)
