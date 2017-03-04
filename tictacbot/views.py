@@ -5,6 +5,9 @@ from .tictactoebot import TicTacPlayer
 from .exception import ParseError, GameError
 from io import BytesIO, BufferedReader
 from random import choice
+import logging
+
+
 
 def arguments(*arg_types):
     types = {len(pair):pair for pair in arg_types}
@@ -42,6 +45,7 @@ def get_client(client):
 @arguments((int, str), (int,), ())
 def start_game(update, args):
     if not args:
+        print("New client: {0}!".format(str(update.message.from_user.username)))
         return "Hello! Type start <size> to play the game, or use /help!"
     size = args[0]
     if len(args) == 2:
@@ -80,7 +84,6 @@ def process_move(update, args):
         raise GameError("Game is over, let it go. Or /start another one.")
     board.move(x - 1, y - 1)
     if not board.end and client["bot"].decode('ascii') == "on":
-        print("kek")
         TicTacPlayer.move(board)
     client["board"] = repr(board)
     img = board.img()

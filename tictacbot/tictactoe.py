@@ -75,23 +75,34 @@ class TicTacToe:
         diag2_count = inspect(field, (1, -1), (0, field_size - 1), field_size)
 
         empty_count = 0
+        free_lanes = 0
 
         for x in range(field_size):
             empty_count += vert_counts[x]['_']
+            if vert_counts[x]['x'] == 0 or vert_counts[x]['o'] == 0:
+                free_lanes += 1
             if vert_counts[x]['x'] == field_size or vert_counts[x]['o'] == field_size:
                 return "vert", x
 
         for y in range(field_size):
+            if hor_counts[y]['x'] == 0 or hor_counts[y]['o'] == 0:
+                free_lanes += 1
             if hor_counts[y]['x'] == field_size or hor_counts[y]['o'] == field_size:
                 return "hor", y
+
+        if diag1_count['x'] == 0 or diag1_count['o'] == 0:
+            free_lanes += 1
 
         if diag1_count['x'] == field_size or diag1_count['o'] == field_size:
             return "diag", 1
 
+        if diag2_count['x'] == 0 or diag2_count['o'] == 0:
+            free_lanes += 1
+
         if diag2_count['x'] == field_size or diag2_count['o'] == field_size:
             return "diag", 2
 
-        if empty_count == 0:
+        if free_lanes == 0:
             return "tie", 0
 
         return False
