@@ -12,7 +12,7 @@ import logging
 def arguments(*arg_types):
     types = {len(pair):pair for pair in arg_types}
     def decorator(func):
-        def wrapper(update, args):
+        def wrapper(update, args, **kwargs):
             if len(args) not in types:
                 raise ParseError("Not enough or too many arguments")
             parsed = []
@@ -24,7 +24,7 @@ def arguments(*arg_types):
                         parsed.append(args[i])
                 except:
                     raise ParseError(str(args[i]))
-            return func(update, tuple(parsed))
+            return func(update, tuple(parsed), **kwargs)
         return wrapper
     return decorator
 
