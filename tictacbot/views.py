@@ -49,23 +49,27 @@ def get_client(client):
 )
 @arguments((int, str), (int,), ())
 def start_game(update, args, restart=False):
-    if not args:
-        print("New client: {0}!".format(update.message.from_user.username))
-        return "Hello! Type start <size> to play the game, or use /help!"
     size = args[0]
     if len(args) == 2:
         start = args[1]
     else:
         start = choice(["x", "o"])
+
     client = get_client(update.message.chat_id)
+
     if client["board"] and not restart:
         return "You still have a game playing."
+
     if client["another_one"]:
         client["another_one"] = ""
+
     if start not in ['o', 'x']:
         raise ValueError("Invalid starting piece")
+
     board = TicTacToe(field_size=size)
     opposite = board.opposite(start)
+    after_img = []
+
     if not restart:
         if client["bot"] == 'on':
             client[start] = '#any'
@@ -73,18 +77,17 @@ def start_game(update, args, restart=False):
         else:
             client[start] = update.message.from_user.username
             client[opposite] = "#undefined"
+    else:
+        after_img.append("{0} goes first!".format(client["x"]))
+
     response = []
     if client["x"] == "#bot":
         TicTacPlayer.move(board)
-        response.append(("img", board.img()))
     elif client["x"] == "#undefined":
-        response.append(("img", board.img()))
-        response.append("The first turn is the other player's! /join to play!")
-
-    else:
-        response.append(("img", board.img()))
+        after_img.append("The first turn is the other player's! /join to play!")
+    response.append(("img", board.img()))
     client["board"] = repr(board)
-    return response
+    return response+after_img
 
 
 
