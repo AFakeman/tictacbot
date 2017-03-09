@@ -48,9 +48,7 @@ def start_game(*args, restart=False, upd=None, context=None, cbq=False):
     if len(args) == 2:
         start = args[1]
     else:
-        print("Picking at random")
         start = random.choice(["x", "o"])
-        print(start)
 
     if context["board"] and not restart:
         return "You still have a game playing."
@@ -87,6 +85,7 @@ def start_game(*args, restart=False, upd=None, context=None, cbq=False):
         name = "Anyone" if context["x"] == "#any" else context["x"]
         after_img.append("{0} goes first!".format(name))
     response.append(print_game_board(board))
+    response.append(print_controls(board))
     context["board"] = repr(board)
     return response+after_img
 
@@ -114,9 +113,9 @@ def process_move(x, y, upd=None, context=None, cbq=False):
 
     if context[board.turn] != username and context[board.turn] != "#any":
         if context[board.opposite(board.turn)] == username:
-            return "It's not your turn!"
+            raise GameError("It's not your turn!")
         else:
-            return "Only the player who /start and who /join may play"
+            raise GameError("Only the player who /start and who /join may play")
 
     board.move(x - 1, y - 1)
     if context[board.turn] == "#bot" and not board.end:
@@ -124,7 +123,7 @@ def process_move(x, y, upd=None, context=None, cbq=False):
     context["board"] = repr(board)
     reply = []
     if board.end:
-        reply.append(print_game_board(board, controls=False))
+        reply.append(print_game_board(board))
         game_result, param = board.check_win(board.field)
         if game_result == "tie":
             reply.append("It's a tie!")
@@ -134,7 +133,9 @@ def process_move(x, y, upd=None, context=None, cbq=False):
         context["another_one"] = "yes"
     else:
         reply.append(print_game_board(board))
+        reply.append(print_controls(board))
     return reply
+
 
 @bot.command_handler(
     command='join',
@@ -182,9 +183,12 @@ def end_game(upd=None, context=None):
         return "You were not playing in the first place..."
 
 
-def print_game_board(board, controls=True):
-    reply = []
-    if board.field_size in range(6) and controls:
+def print_game_board(board):
+    reply = [("img", board.img())]
+    return reply
+
+def print_controls(board):
+    if board.field_size <= 5:
         markup_list = []
         for y in range(board.field_size):
             markup_row = []
@@ -200,10 +204,7 @@ def print_game_board(board, controls=True):
                 markup_row.append(button)
             markup_list.append(markup_row)
         markup = InlineKeyboardMarkup(markup_list)
-        reply.append(("inline_kb", ("Your move:", markup)))
-    else:
-        reply.append(("img", board.img()))
-    return reply
+        return "inline_kb", ("Your move:", markup)
 
 @bot.command_handler('yes', pass_context=True)
 def agree(upd=None, context=None):
@@ -260,7 +261,7 @@ def toggle_bot(*args, upd=None, context=None):
 def print_field(upd=None, context=None):
     if context["board"]:
         board = TicTacToe(field=context["board"])
-        return print_game_board(board, controls=False)
+        return print_game_board(board)
     else:
         return "There is no game in process."
 
@@ -275,37 +276,22 @@ def handle_cbquery(bot, upd=None, context=None):
         return
     board = TicTacToe(context["board"])
     if len(split) == 2:
+        result = []
         x = int(split[0])
         y = int(split[1])
-        if context[board.turn] == query.from_user.username\
-                or context[board.turn] == "#any":
-            bot.editMessageText(text="Turn accepted",
-                            chat_id=query.message.chat_id,
-                            message_id=query.message.message_id)
-            try:
-                result = [
-                    print_game_board(board, controls=False),
-                    process_move((x, y), upd=upd, context=context, cbq=True)
-                ]
-            except GameError as e:
-                bot.editMessageText(text=str(e),
-                                    chat_id=query.message.chat_id,
-                                    message_id=query.message.message_id)
-                result = [
-                    print_game_board(board, controls=True)
-                ]
-        else:
-            if context[board.turn] == "#undefined":
-                message = "We need somebody to /join here!"
-            else:
-                message = "It's {0}'s turn".format(context[board.turn])
-            bot.editMessageText(text=message,
+        bot.editMessageText(text="Turn accepted",
+                        chat_id=query.message.chat_id,
+                        message_id=query.message.message_id)
+        try:
+            result.append(process_move((x, y), upd=upd, context=context, cbq=True))
+        except GameError as e:
+            bot.editMessageText(text=str(e),
                                 chat_id=query.message.chat_id,
                                 message_id=query.message.message_id)
+            board = TicTacToe(context["board"])
             result = [
-                print_game_board(board)
+                print_controls(board)
             ]
-
         return result
 
 
