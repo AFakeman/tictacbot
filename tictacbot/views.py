@@ -206,7 +206,7 @@ def agree(upd=None, context=None):
         board_obj = TicTacToe(field=board)
         size = board_obj.field_size
         context["board"] = ""
-        return start_game((size,) , upd=upd, restart=True)
+        return start_game((size,) , upd=upd, restart=True, context=context)
     else:
         return "Huh?"
 
