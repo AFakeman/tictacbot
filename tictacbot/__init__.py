@@ -16,6 +16,6 @@ else:
     with open('config.yml', 'w') as f:
         yaml.dump(config, f)
 
-bot = TelegramBot(config["api_key"])
 info = RedisUniterableMap(host=config["redis_host"], port=config["redis_port"], base_key="info")
+bot = TelegramBot(config["api_key"], info=info)
 from . import views
