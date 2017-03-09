@@ -5,9 +5,9 @@ from .tictactoe import TicTacToe
 from .tictactoebot import TicTacPlayer
 from .exception import ParseError, GameError
 from io import BytesIO, BufferedReader
-from random import choice
+import random
 import logging
-
+import time
 
 
 def arguments(*arg_types):
@@ -48,7 +48,9 @@ def start_game(*args, restart=False, upd=None, context=None, cbq=False):
     if len(args) == 2:
         start = args[1]
     else:
-        start = choice(["x", "o"])
+        print("Picking at random")
+        random.Random(time.time())
+        start = random.choice(["x", "o"])
 
     if context["board"] and not restart:
         return "You still have a game playing."

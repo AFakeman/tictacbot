@@ -2,7 +2,7 @@ from .tictactoe import TicTacToe, inspect, xy
 
 opposite = TicTacToe.opposite
 
-def calculate_attr(lane, turn, field_size, at_price=2, def_price=2, reinforce_price=2):
+def calculate_attr(lane, turn, field_size, at_price=2, def_price=3, reinforce_price=2):
     if lane["_"] == 0:
         return ("atk", 0)
     if lane[opposite(turn)] == 0 and lane[turn] == 0: #  We should attack!
