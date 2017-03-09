@@ -49,8 +49,8 @@ def start_game(*args, restart=False, upd=None, context=None, cbq=False):
         start = args[1]
     else:
         print("Picking at random")
-        random.Random(time.time())
         start = random.choice(["x", "o"])
+        print(start)
 
     if context["board"] and not restart:
         return "You still have a game playing."
@@ -72,6 +72,11 @@ def start_game(*args, restart=False, upd=None, context=None, cbq=False):
         else:
             context[start] = username
             context[opposite] = "#undefined"
+    else:
+        old_x = context["x"]
+        old_o = context["o"]
+        context[start] = old_x
+        context[opposite] = old_o
 
     response = []
     if context["x"] == "#bot":
