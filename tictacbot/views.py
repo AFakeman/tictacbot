@@ -275,10 +275,18 @@ def handle_cbquery(bot, upd=None, context=None):
             bot.editMessageText(text="Turn accepted",
                             chat_id=query.message.chat_id,
                             message_id=query.message.message_id)
-            result = [
-                print_game_board(board, controls=False),
-                process_move((x, y), upd=upd, context=context, cbq=True)
-            ]
+            try:
+                result = [
+                    print_game_board(board, controls=False),
+                    process_move((x, y), upd=upd, context=context, cbq=True)
+                ]
+            except GameError as e:
+                bot.editMessageText(text=str(e),
+                                    chat_id=query.message.chat_id,
+                                    message_id=query.message.message_id)
+                result = [
+                    print_game_board(board, controls=True)
+                ]
         else:
             if context[board.turn] == "#undefined":
                 message = "We need somebody to /join here!"

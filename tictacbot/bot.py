@@ -89,7 +89,6 @@ class TelegramBot:
     def cbquery_handler(self, pass_context=False):
         def add_handler(func):
             def processor(bot, update):
-                print(update)
                 kwargs = {"upd": update}
                 chat_id = update.callback_query.message.chat_id
                 if pass_context:
