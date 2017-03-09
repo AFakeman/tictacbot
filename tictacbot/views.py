@@ -270,7 +270,8 @@ def handle_cbquery(bot, upd=None, context=None):
     if len(split) == 2:
         x = int(split[0])
         y = int(split[1])
-        if context[board.turn] == query.from_user.username:
+        if context[board.turn] == query.from_user.username\
+                or context[board.turn] == "#any":
             bot.editMessageText(text="Turn accepted",
                             chat_id=query.message.chat_id,
                             message_id=query.message.message_id)
