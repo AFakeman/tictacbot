@@ -1,17 +1,15 @@
 from telegram.ext import Filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from . import bot, info
+from . import bot
 from .tictactoe import TicTacToe
 from .tictactoebot import TicTacPlayer
 from .exception import ParseError, GameError
-from io import BytesIO, BufferedReader
 import random
-import logging
-import time
 
 
 def arguments(*arg_types):
-    types = {len(pair):pair for pair in arg_types}
+    types = {len(pair): pair for pair in arg_types}
+
     def decorator(func):
         def wrapper(args, **kwargs):
             if len(args) not in types:
@@ -28,7 +26,6 @@ def arguments(*arg_types):
             return func(*tuple(parsed), **kwargs)
         return wrapper
     return decorator
-
 
 
 @bot.command_handler(
@@ -88,8 +85,6 @@ def start_game(*args, restart=False, upd=None, context=None, cbq=False):
     response.append(print_controls(board))
     context["board"] = repr(board)
     return response+after_img
-
-
 
 
 @bot.command_handler(
@@ -167,6 +162,7 @@ def process_join(upd=None, context=None, cbq=False):
     else:
         return "Both players seem to be present."
 
+
 @bot.command_handler(
     command='end_game',
     doc="/end_game - stop current game.",
@@ -187,6 +183,7 @@ def print_game_board(board):
     reply = [("img", board.img())]
     return reply
 
+
 def print_controls(board):
     if board.field_size <= 5:
         markup_list = []
@@ -195,7 +192,7 @@ def print_controls(board):
             for x in range(board.field_size):
                 if (x, y) == board.last_x:
                     tile = "X"
-                elif (x,y) == board.last_o:
+                elif (x, y) == board.last_o:
                     tile = "O"
                 else:
                     tile = board[(x, y)]
@@ -206,6 +203,7 @@ def print_controls(board):
         markup = InlineKeyboardMarkup(markup_list)
         return "inline_kb", ("Your move:", markup)
 
+
 @bot.command_handler('yes', pass_context=True)
 def agree(upd=None, context=None):
     if context["another_one"]:
@@ -214,7 +212,7 @@ def agree(upd=None, context=None):
         board_obj = TicTacToe(field=board)
         size = board_obj.field_size
         context["board"] = ""
-        return start_game((size,) , upd=upd, restart=True, context=context)
+        return start_game((size,), upd=upd, restart=True, context=context)
     else:
         return "Huh?"
 
@@ -265,29 +263,30 @@ def print_field(upd=None, context=None):
     else:
         return "There is no game in process."
 
-@bot.cbquery_handler(pass_context=True)
-def handle_cbquery(bot, upd=None, context=None):
+
+@telebot.cbquery_handler(pass_context=True)
+def handle_cbquery(telebot, upd=None, context=None):
     query = upd.callback_query
     split = query.data.split(" ")
     if not context["board"] or TicTacToe(context["board"]).end:
-        bot.editMessageText(text="No game is being played.",
-                            chat_id=query.message.chat_id,
-                            message_id=query.message.message_id)
+        telebot.editMessageText(text="No game is being played.",
+                                chat_id=query.message.chat_id,
+                                message_id=query.message.message_id)
         return
     board = TicTacToe(context["board"])
     if len(split) == 2:
         result = []
         x = int(split[0])
         y = int(split[1])
-        bot.editMessageText(text="Turn accepted",
-                        chat_id=query.message.chat_id,
-                        message_id=query.message.message_id)
+        telebot.editMessageText(text="Turn accepted",
+                                chat_id=query.message.chat_id,
+                                message_id=query.message.message_id)
         try:
             result.append(process_move((x, y), upd=upd, context=context, cbq=True))
         except GameError as e:
-            bot.editMessageText(text=str(e),
-                                chat_id=query.message.chat_id,
-                                message_id=query.message.message_id)
+            telebot.editMessageText(text=str(e),
+                                    chat_id=query.message.chat_id,
+                                    message_id=query.message.message_id)
             board = TicTacToe(context["board"])
             result = [
                 print_controls(board)

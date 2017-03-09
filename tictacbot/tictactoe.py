@@ -3,8 +3,10 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 import json
 
+
 def xy(size, x, y):
     return size * y + x
+
 
 def inspect(field, speed, start, field_size):
     count = {"_": 0, "x": 0, "o": 0}
@@ -12,7 +14,7 @@ def inspect(field, speed, start, field_size):
     speed_y = speed[1]
     x = start[0]
     y = start[1]
-    while(x < field_size and y < field_size):
+    while x < field_size and y < field_size:
         count[field[xy(field_size, x, y)]] += 1
         x += speed_x
         y += speed_y
@@ -50,7 +52,6 @@ class TicTacToe:
 
     def xy(self, x, y):
         return xy(self.field_size, x, y)
-
 
     @staticmethod
     def opposite(player):
@@ -145,7 +146,7 @@ class TicTacToe:
     def img(self, cell_size=50, border_width=1, x_width=1, o_width=1, won_width=5,
             border_color="#000000", bg_color="#ffffff", text_color="#000000",
             last_x_color="#ff0000", last_o_color="#0000FF", default_cell_color="#000000"):
-        width = cell_size * (self.field_size + 1) + border_width * (self.field_size)
+        width = cell_size * (self.field_size + 1) + border_width * self.field_size
         size = (width, width)
         image = Image.new("RGB", size, bg_color)
         draw = ImageDraw.Draw(image)
@@ -165,14 +166,14 @@ class TicTacToe:
                 x_high = x_low + cell_size - 1
                 y_low = (cell_size + border_width) * (y + 1)
                 y_high = y_low + cell_size - 1
-                if self[self.xy(x,y)] == 'x':
+                if self[self.xy(x, y)] == 'x':
                     if (x, y) == self.last_x:
                         color = last_x_color
                     else:
                         color = default_cell_color
                     draw.line([x_low, y_low, x_high, y_high], width=x_width, fill=color)
                     draw.line([x_low, y_high, x_high, y_low], width=x_width, fill=color)
-                elif self[self.xy(x,y)] == 'o':
+                elif self[self.xy(x, y)] == 'o':
                     if (x, y) == self.last_o:
                         color = last_o_color
                     else:
@@ -206,7 +207,7 @@ class TicTacToe:
             draw.text((x_pos, y_pos), str(x+1), fill=text_color)
 
         for y in range(self.field_size):
-            x_pos =  5
+            x_pos = 5
             y_pos = cell_size * (y + 1) + border_width * y
             draw.text((x_pos, y_pos), str(y + 1), fill=text_color)
 

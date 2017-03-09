@@ -18,4 +18,5 @@ else:
 
 info = RedisUniterableMap(host=config["redis_host"], port=config["redis_port"], base_key="info")
 bot = TelegramBot(config["api_key"], info=info)
+
 from . import views

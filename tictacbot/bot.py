@@ -1,11 +1,12 @@
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
-from sys import stdout
 from .exception import ParseError, GameError
 import logging
 
+
 def print_error(bot, update, error):
     print(error)
+
 
 class TelegramBot:
     def __init__(self, token, info):
