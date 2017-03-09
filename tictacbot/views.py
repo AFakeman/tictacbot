@@ -144,10 +144,18 @@ def process_join(upd=None, context=None, cbq=False):
         return "You have to turn the bot off to join the game."
     if context["x"] == "#undefined":
         context["x"] = username
-        return "You play as x's!"
+        board = TicTacToe(context["board"])
+        return [
+            print_game_board(board),
+            "You play as x's!"
+        ]
     elif context["o"] == "#undefined":
         context["o"] = username
-        return "You play as o's!"
+        board = TicTacToe(context["board"])
+        return [
+            print_game_board(board),
+            "You play as o's!"
+        ]
     else:
         return "Both players seem to be present."
 
@@ -250,13 +258,39 @@ def print_field(upd=None, context=None):
         return "There is no game in process."
 
 @bot.cbquery_handler(pass_context=True)
-def handle_cbquery(upd=None, context=None):
+def handle_cbquery(bot, upd=None, context=None):
     query = upd.callback_query
     split = query.data.split(" ")
+    if not context["board"] or TicTacToe(context["board"]).end:
+        bot.editMessageText(text="No game is being played.",
+                            chat_id=query.message.chat_id,
+                            message_id=query.message.message_id)
+        return
+    board = TicTacToe(context["board"])
     if len(split) == 2:
         x = int(split[0])
         y = int(split[1])
-        return process_move((x, y), upd=upd, context=context, cbq=True)
+        if context[board.turn] == query.from_user.username:
+            bot.editMessageText(text="Turn accepted",
+                            chat_id=query.message.chat_id,
+                            message_id=query.message.message_id)
+            result = [
+                print_game_board(board, controls=False),
+                process_move((x, y), upd=upd, context=context, cbq=True)
+            ]
+        else:
+            if context[board.turn] == "#undefined":
+                message = "We need somebody to /join here!"
+            else:
+                message = "It's {0}'s turn".format(context[board.turn])
+            bot.editMessageText(text=message,
+                                chat_id=query.message.chat_id,
+                                message_id=query.message.message_id)
+            result = [
+                print_game_board(board)
+            ]
+
+        return result
 
 
 @bot.message_handler(Filters.command)

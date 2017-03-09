@@ -192,12 +192,12 @@ class TicTacToe:
             elif direction == "hor":
                 x_low = cell_size
                 x_high = width - 1
-                y_low = y_high = coord * (cell_size + border_width) + int(cell_size / 2)
+                y_low = y_high = (coord + 1) * (cell_size + border_width) + int(cell_size / 2)
                 draw.line([x_low, y_low, x_high, y_high], width=won_width, fill=border_color)
             elif direction == "vert":
                 y_low = cell_size
                 y_high = width - 1
-                x_low = x_high = coord * (cell_size + border_width) + int(cell_size / 2)
+                x_low = x_high = (coord + 1) * (cell_size + border_width) + int(cell_size / 2)
                 draw.line([x_low, y_low, x_high, y_high], width=won_width, fill=border_color)
 
         for x in range(self.field_size):

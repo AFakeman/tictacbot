@@ -95,7 +95,7 @@ class TelegramBot:
                 if pass_context:
                     kwargs["context"] = self.get_chat_context(chat_id)
                 try:
-                    result = func(**kwargs)
+                    result = func(bot, **kwargs)
                 except GameError as e:
                     result = str(e)
                 if result:
