@@ -1,8 +1,9 @@
-from telegram.ext import Updater
+from telegram.ext import Dispatcher
 from telegram.ext import CommandHandler, MessageHandler
-from sys import stdout
+from telegram import bot, Update
 from .exception import ParseError, GameError
 import logging
+import json
 
 class TelegramBot:
     def help_func(self, bot, update):
@@ -11,17 +12,14 @@ class TelegramBot:
 
     def __init__(self, token):
         self.token = token
-        self.updater = Updater(token=self.token)
-        self.dispatcher = self.updater.dispatcher
+        self.bot = bot(token)
+        self.dispatcher = Dispatcher(bot, None, workers=0)
         self.help = ["/help - show this message."]
         help_handler = CommandHandler("help", self.help_func)
         self.dispatcher.add_handler(help_handler)
         logging.basicConfig(
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             level=logging.INFO)
-
-    def run(self):
-        self.updater.start_polling()
 
     def command_handler(self, command, group=0, doc=None, pass_args=False):
         def add_command(func):
@@ -71,3 +69,9 @@ class TelegramBot:
             for i in obj:
                 if i:
                     self.send(bot, i, chat)
+
+    def process_update(self, update):
+        upd_decode = update.decode("UTF-8")
+        upd_loaded = json.loads(upd_decode)
+        upd_proper = Update.de_json(upd_loaded)
+        self.dispatcher.process_update(upd_proper)
