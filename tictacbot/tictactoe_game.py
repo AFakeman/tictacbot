@@ -1,10 +1,12 @@
 from .exception import GameError
 from PIL import Image, ImageDraw
 from io import BytesIO
+import json
 
 
 def xy(size, x, y):
     return size * y + x
+
 
 def inspect(field, speed, start, field_size):
     count = {"_": 0, "x": 0, "o": 0}
@@ -12,12 +14,11 @@ def inspect(field, speed, start, field_size):
     speed_y = speed[1]
     x = start[0]
     y = start[1]
-    while(x < field_size and y < field_size):
+    while x < field_size and y < field_size:
         count[field[xy(field_size, x, y)]] += 1
         x += speed_x
         y += speed_y
     return count
-
 
 
 class TicTacToe:
@@ -25,11 +26,20 @@ class TicTacToe:
         if field_size not in range(3, 51):
             raise GameError("Invalid field size. Field size should be between 3 and 50.")
         if field:
-            self.field = [i for i in field]
-            self.field_size = int(len(self.field) ** 0.5)
+            field_data = json.loads(field)
+            self.field = field_data["field"]
+            self.field_size = field_data["size"]
+            self.last_o = field_data["last_o"]
+            if self.last_o:
+                self.last_o = tuple(self.last_o)
+            self.last_x = field_data["last_x"]
+            if self.last_x:
+                self.last_x = tuple(self.last_x)
         else:
             self.field_size = field_size
             self.field = ["_" for _ in range(self.field_size ** 2)]
+            self.last_o = None
+            self.last_x = None
         x_count = self.field.count('x')
         o_count = self.field.count('o')
         if x_count == o_count:
@@ -42,7 +52,6 @@ class TicTacToe:
 
     def xy(self, x, y):
         return xy(self.field_size, x, y)
-
 
     @staticmethod
     def opposite(player):
@@ -63,6 +72,10 @@ class TicTacToe:
         if self.field[x + y * self.field_size] != '_':
             raise GameError("Cell is taken")
         self.field[self.xy(x, y)] = self.turn
+        if self.turn == "x":
+            self.last_x = (x, y)
+        else:
+            self.last_o = (x, y)
         self.turn = self.opposite(self.turn)
         self.end = self.check_win(self.field)
 
@@ -116,59 +129,87 @@ class TicTacToe:
         return "".join(build)
 
     def __repr__(self):
-        return "".join(self.field)
+        data = {
+            "field": self.field,
+            "size": self.field_size,
+            "last_x": self.last_x,
+            "last_o": self.last_o
+        }
+        return json.dumps(data)
 
-    def __getitem__(self, *coord):
-        if len(coord) == 1:
-            return self.field[coord[0]]
-        elif len(coord) == 2:
-            return self.field[self.xy(*coord)]
+    def __getitem__(self, coord):
+        if isinstance(coord, int):
+            return self.field[coord]
         else:
-            return
+            return self.field[self.xy(*coord)]
 
-    def img(self, cell_size=50, border_width=1, x_width=1, o_width=1, won_width=5):
-        width = cell_size * self.field_size + border_width * (self.field_size - 1)
+    def img(self, cell_size=50, border_width=1, x_width=1, o_width=1, won_width=5,
+            border_color="#000000", bg_color="#ffffff", text_color="#000000",
+            last_x_color="#ff0000", last_o_color="#0000FF", default_cell_color="#000000"):
+        width = cell_size * (self.field_size + 1) + border_width * self.field_size
         size = (width, width)
-        image = Image.new("1", size, 1)
+        image = Image.new("RGB", size, bg_color)
         draw = ImageDraw.Draw(image)
-        for x in range(self.field_size - 1):
+
+        for x in range(self.field_size):
             x_pos = cell_size * (x + 1) + border_width * x
-            draw.line([x_pos, 0, x_pos, width - 1], width=border_width)
-        for y in range(self.field_size - 1):
+            draw.line([x_pos, 0, x_pos, width - 1], width=border_width,
+                      fill=border_color)
+        for y in range(self.field_size):
             y_pos = cell_size * (y + 1) + border_width * y
-            draw.line([0, y_pos, width - 1, y_pos], width=border_width)
+            draw.line([0, y_pos, width - 1, y_pos], width=border_width,
+                      fill=border_color)
+
         for x in range(self.field_size):
             for y in range(self.field_size):
-                x_low = (cell_size + border_width) * x
+                x_low = (cell_size + border_width) * (x + 1)
                 x_high = x_low + cell_size - 1
-                y_low = (cell_size + border_width) * y
+                y_low = (cell_size + border_width) * (y + 1)
                 y_high = y_low + cell_size - 1
-                if self[self.xy(x,y)] == 'x':
-                    draw.line([x_low, y_low, x_high, y_high], width=x_width)
-                    draw.line([x_low, y_high, x_high, y_low], width=x_width)
-                elif self[self.xy(x,y)] == 'o':
-                    draw.ellipse([x_low, y_low, x_high, y_high])
+                if self[self.xy(x, y)] == 'x':
+                    if (x, y) == self.last_x:
+                        color = last_x_color
+                    else:
+                        color = default_cell_color
+                    draw.line([x_low, y_low, x_high, y_high], width=x_width, fill=color)
+                    draw.line([x_low, y_high, x_high, y_low], width=x_width, fill=color)
+                elif self[self.xy(x, y)] == 'o':
+                    if (x, y) == self.last_o:
+                        color = last_o_color
+                    else:
+                        color = default_cell_color
+                    draw.ellipse([x_low, y_low, x_high, y_high], outline=color)
         if self.end:
             direction, coord = self.end
             if direction == "diag":
-                x_low = 0
+                x_low = cell_size
                 x_high = width - 1
-                y_low = 0
+                y_low = cell_size
                 y_high = width - 1
                 if coord == 1:
-                    draw.line([x_low, y_low, x_high, y_high], width=won_width)
+                    draw.line([x_low, y_low, x_high, y_high], width=won_width, fill=border_color)
                 elif coord == 2:
-                    draw.line([x_low, y_high, x_high, y_low], width=won_width)
+                    draw.line([x_low, y_high, x_high, y_low], width=won_width, fill=border_color)
             elif direction == "hor":
-                x_low = 0
+                x_low = cell_size
                 x_high = width - 1
-                y_low = y_high = coord * (cell_size + border_width) + int(cell_size / 2)
-                draw.line([x_low, y_low, x_high, y_high], width=won_width)
+                y_low = y_high = (coord + 1) * (cell_size + border_width) + int(cell_size / 2)
+                draw.line([x_low, y_low, x_high, y_high], width=won_width, fill=border_color)
             elif direction == "vert":
-                y_low = 0
+                y_low = cell_size
                 y_high = width - 1
-                x_low = x_high = coord * (cell_size + border_width) + int(cell_size / 2)
-                draw.line([x_low, y_low, x_high, y_high], width=won_width)
+                x_low = x_high = (coord + 1) * (cell_size + border_width) + int(cell_size / 2)
+                draw.line([x_low, y_low, x_high, y_high], width=won_width, fill=border_color)
+
+        for x in range(self.field_size):
+            y_pos = 0
+            x_pos = cell_size * (x + 1) + border_width * x + 5
+            draw.text((x_pos, y_pos), str(x+1), fill=text_color)
+
+        for y in range(self.field_size):
+            x_pos = 5
+            y_pos = cell_size * (y + 1) + border_width * y
+            draw.text((x_pos, y_pos), str(y + 1), fill=text_color)
 
         buffer = BytesIO()
         image.save(buffer, format="png")

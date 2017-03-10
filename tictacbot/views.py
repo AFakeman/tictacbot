@@ -1,19 +1,17 @@
 from telegram.ext import Filters
-from . import info
 from . import telebot as bot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from .tictactoe_game import TicTacToe
 from .tictactoe_bot import TicTacPlayer
 from .exception import ParseError, GameError
-from io import BytesIO, BufferedReader
-from random import choice
-import logging
-
+import random
 
 
 def arguments(*arg_types):
-    types = {len(pair):pair for pair in arg_types}
+    types = {len(pair): pair for pair in arg_types}
+
     def decorator(func):
-        def wrapper(update, args, **kwargs):
+        def wrapper(args, **kwargs):
             if len(args) not in types:
                 raise ParseError("Not enough or too many arguments")
             parsed = []
@@ -25,44 +23,35 @@ def arguments(*arg_types):
                         parsed.append(args[i])
                 except:
                     raise ParseError(str(args[i]))
-            return func(update, tuple(parsed), **kwargs)
+            return func(*tuple(parsed), **kwargs)
         return wrapper
     return decorator
 
-def get_client(client):
-    if client not in info:
-        info[client] = {
-            "another_one": "",  # whether the user was offered another game
-            "board": "",  # current state of the board in str representation
-            "bot": "on",  # turn the AI on or off
-            "x": "",  # x's player, "#bot' is for the AI player
-            "o": "",  # o's player
-        }
-    info_obj = info[client]
-    info_obj.decode = "UTF-8"
-    return info_obj
 
 @bot.command_handler(
     command='start',
     doc="/start <size> (<side>) - start with a <size> cell field "
         "(between 3 and 50), <side> is x or o. X's go first!",
-    pass_args=True
+    pass_args=True,
+    pass_context=True
 )
 @arguments((int, str), (int,), ())
-def start_game(update, args, restart=False):
+def start_game(*args, restart=False, upd=None, context=None, cbq=False):
+    if not cbq:
+        username = upd.message.from_user.username
+    else:
+        username = upd.callback_query.from_user.username
     size = args[0]
     if len(args) == 2:
         start = args[1]
     else:
-        start = choice(["x", "o"])
+        start = random.choice(["x", "o"])
 
-    client = get_client(update.message.chat_id)
-
-    if client["board"] and not restart:
+    if context["board"] and not restart:
         return "You still have a game playing."
 
-    if client["another_one"]:
-        client["another_one"] = ""
+    if context["another_one"]:
+        context["another_one"] = ""
 
     if start not in ['o', 'x']:
         raise ValueError("Invalid starting piece")
@@ -72,118 +61,169 @@ def start_game(update, args, restart=False):
     after_img = []
 
     if not restart:
-        if client["bot"] == 'on':
-            client[start] = '#any'
-            client[opposite] = "#bot"
+        if context["bot"] == 'on':
+            context[start] = '#any'
+            context[opposite] = "#bot"
         else:
-            client[start] = update.message.from_user.username
-            client[opposite] = "#undefined"
+            context[start] = username
+            context[opposite] = "#undefined"
     else:
-        after_img.append("{0} goes first!".format(client["x"]))
+        old_x = context["x"]
+        old_o = context["o"]
+        context[start] = old_x
+        context[opposite] = old_o
 
     response = []
-    if client["x"] == "#bot":
+    if context["x"] == "#bot":
         TicTacPlayer.move(board)
-    elif client["x"] == "#undefined":
+    elif context["x"] == "#undefined":
         after_img.append("The first turn is the other player's! /join to play!")
-    response.append(("img", board.img()))
-    client["board"] = repr(board)
+    else:
+        name = "Anyone" if context["x"] == "#any" else context["x"]
+        after_img.append("{0} goes first!".format(name))
+    response.append(print_game_board(board))
+    response.append(print_controls(board))
+    context["board"] = repr(board)
     return response+after_img
-
 
 
 @bot.command_handler(
     command='move',
     doc="/move <x> <y> - place a tile at coordinates",
-    pass_args=True
+    pass_args=True,
+    pass_context=True
 )
 @arguments((int, int))
-def process_move(update, args):
-    x = args[0]
-    y = args[1]
-    client = get_client(update.message.chat_id)
+def process_move(x, y, upd=None, context=None, cbq=False):
     response = []
-    if not client["board"]:
-        raise GameError("You are not playing. Care to /start another one?")
-    board = TicTacToe(client["board"])
+    if not cbq:
+        username = upd.message.from_user.username
+    else:
+        username = upd.callback_query.from_user.username
+    if not context["board"]:
+        return "You are not playing. Care to /start another one?"
+    board = TicTacToe(context["board"])
     if board.end:
-        raise GameError("Game is over, let it go. Or /start another one.")
-    if client[board.turn] != update.message.from_user.username and client[board.turn] != "#any":
-        if client[board.opposite(board.turn)] == update.message.from_user.username:
-            return "It's not your turn!"
+        return "Game is over, let it go. Or /start another one."
+
+    if context[board.turn] != username and context[board.turn] != "#any":
+        if context[board.opposite(board.turn)] == username:
+            raise GameError("It's not your turn!")
         else:
-            return "Only the player who /start and who /join may play"
+            raise GameError("Only the player who /start and who /join may play")
+
     board.move(x - 1, y - 1)
-    if client[board.turn] == "#bot":
+    if context[board.turn] == "#bot" and not board.end:
         TicTacPlayer.move(board)
-    client["board"] = repr(board)
-    img = board.img()
-    reply = [("img", img)]
+    context["board"] = repr(board)
+    reply = []
     if board.end:
+        reply.append(print_game_board(board))
         game_result, param = board.check_win(board.field)
         if game_result == "tie":
             reply.append("It's a tie!")
         else:
             reply.append("Game is over! {0}'s won!".format(board.opposite(board.turn)))
         reply.append("Another one (/yes or /no)?")
-        client["another_one"] = "yes"
+        context["another_one"] = "yes"
+    else:
+        reply.append(print_game_board(board))
+        reply.append(print_controls(board))
     return reply
+
 
 @bot.command_handler(
     command='join',
     doc='/join - join the game created by another player. '
         'Works only if the bot is off.',
+    pass_context=True
 )
-def process_join(update):
-    client = get_client(update.message.chat_id)
-    if client["bot"] == "on":
+def process_join(upd=None, context=None, cbq=False):
+    if not cbq:
+        username = upd.message.from_user.username
+    else:
+        username = upd.callback_query.from_user.username
+    if context["bot"] == "on":
         return "You have to turn the bot off to join the game."
-    if client["x"] == "#undefined":
-        client["x"] = update.message.from_user.username
-        return "You play as x's!"
-    elif client["o"] == "#undefined":
-        client["o"] = update.message.from_user.username
-        return "You play as o's!"
+    if context["x"] == "#undefined":
+        context["x"] = username
+        board = TicTacToe(context["board"])
+        return [
+            print_game_board(board),
+            "You play as x's!"
+        ]
+    elif context["o"] == "#undefined":
+        context["o"] = username
+        board = TicTacToe(context["board"])
+        return [
+            print_game_board(board),
+            "You play as o's!"
+        ]
     else:
         return "Both players seem to be present."
+
 
 @bot.command_handler(
     command='end_game',
     doc="/end_game - stop current game.",
-    pass_args=True
+    pass_context=True
 )
-def end_game(update, args):
-    client = get_client(update.message.chat_id)
-    if client["board"]:
-        client["board"] = ""
-        client["x"] = ""
-        client["y"] = ""
+def end_game(upd=None, context=None):
+    if context["board"]:
+        context["board"] = ""
+        context["x"] = ""
+        context["y"] = ""
+        context["another_one"] = ""
         return "You must be busy. Maybe other time."
     else:
         return "You were not playing in the first place..."
 
 
-@bot.command_handler('yes')
-def agree(update):
-    client = get_client(update.message.chat_id)
-    if client["another_one"]:
-        client["another_one"] = ""
-        board = client["board"]
-        size = int(len(board) ** 0.5)
-        client["board"] = ""
-        return start_game(update, (size, choice(['x','o'])), restart=True)
+def print_game_board(board):
+    reply = [("img", board.img())]
+    return reply
+
+
+def print_controls(board):
+    if board.field_size <= 5:
+        markup_list = []
+        for y in range(board.field_size):
+            markup_row = []
+            for x in range(board.field_size):
+                if (x, y) == board.last_x:
+                    tile = "X"
+                elif (x, y) == board.last_o:
+                    tile = "O"
+                else:
+                    tile = board[(x, y)]
+                button = InlineKeyboardButton(tile,
+                                              callback_data="{0} {1}".format(x + 1, y + 1))
+                markup_row.append(button)
+            markup_list.append(markup_row)
+        markup = InlineKeyboardMarkup(markup_list)
+        return "inline_kb", ("Your move:", markup)
+
+
+@bot.command_handler('yes', pass_context=True)
+def agree(upd=None, context=None):
+    if context["another_one"]:
+        context["another_one"] = ""
+        board = context["board"]
+        board_obj = TicTacToe(field=board)
+        size = board_obj.field_size
+        context["board"] = ""
+        return start_game((size,), upd=upd, restart=True, context=context)
     else:
         return "Huh?"
 
 
-@bot.command_handler('no')
-def disagree(update):
-    client = get_client(update.message.chat_id)
-    if client["another_one"]:
-        client["another_one"] = ""
-        client["board"] = ""
-        client["x"] = ""
-        client["y"] = ""
+@bot.command_handler('no', pass_context=True)
+def disagree(upd=None, context=None):
+    if context["another_one"]:
+        context["another_one"] = ""
+        context["board"] = ""
+        context["x"] = ""
+        context["y"] = ""
         return "You must be busy. Maybe other time."
     else:
         return "Huh?"
@@ -192,25 +232,68 @@ def disagree(update):
 @bot.command_handler(
     command='bot',
     pass_args=True,
-    doc="/bot <on/off> - turn bot on and off."
+    doc="/bot <on/off> - turn bot on and off.",
+    pass_context=True
 )
 @arguments((str,), ())
-def toggle_bot(update, args):
-    client = get_client(update.message.chat_id)
+def toggle_bot(*args, upd=None, context=None):
     if not args:
-        return "Bot is {0} now.".format(client["bot"])
+        return "Bot is {0} now.".format(context["bot"])
     mode = args[0]
     if mode not in ["on", "off"]:
         raise ParseError("Bot can be either on or off.")
-    if mode == client["bot"]:
+    if mode == context["bot"]:
         return "Bot is already {0}.".format(mode)
     else:
-        if client["board"] != "":
+        if context["board"] != "":
             return "You can't toggle the bot during the game!"
-        client["bot"] = mode
+        context["bot"] = mode
         return "Bot is {0} now.".format(mode)
 
 
+@bot.command_handler(
+    command='field',
+    doc="/field - show current state of the board.",
+    pass_context=True
+)
+def print_field(upd=None, context=None):
+    if context["board"]:
+        board = TicTacToe(field=context["board"])
+        return print_game_board(board)
+    else:
+        return "There is no game in process."
+
+
+@bot.cbquery_handler(pass_context=True)
+def handle_cbquery(telebot, upd=None, context=None):
+    query = upd.callback_query
+    split = query.data.split(" ")
+    if not context["board"] or TicTacToe(context["board"]).end:
+        telebot.editMessageText(text="No game is being played.",
+                                chat_id=query.message.chat_id,
+                                message_id=query.message.message_id)
+        return
+    board = TicTacToe(context["board"])
+    if len(split) == 2:
+        result = []
+        x = int(split[0])
+        y = int(split[1])
+        telebot.editMessageText(text="Turn accepted",
+                                chat_id=query.message.chat_id,
+                                message_id=query.message.message_id)
+        try:
+            result.append(process_move((x, y), upd=upd, context=context, cbq=True))
+        except GameError as e:
+            telebot.editMessageText(text=str(e),
+                                    chat_id=query.message.chat_id,
+                                    message_id=query.message.message_id)
+            board = TicTacToe(context["board"])
+            result = [
+                print_controls(board)
+            ]
+        return result
+
+
 @bot.message_handler(Filters.command)
-def process_unknown(update):
+def process_unknown(upd=None):
     return "Unknown command. Type /help for available commands."
