@@ -1,7 +1,8 @@
 from telegram.ext import Filters
-from . import bot, info
-from .tictactoe import TicTacToe
-from .tictactoebot import TicTacPlayer
+from . import info
+from . import telebot as bot
+from .tictactoe_game import TicTacToe
+from .tictactoe_bot import TicTacPlayer
 from .exception import ParseError, GameError
 from io import BytesIO, BufferedReader
 from random import choice
