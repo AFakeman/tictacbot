@@ -1,6 +1,6 @@
 import yaml
 from redis_map import RedisUniterableMap
-from .bot import TelegramBot
+from .telegram_bot import TelegramBot
 import os.path
 
 if os.path.exists('config.yml'):

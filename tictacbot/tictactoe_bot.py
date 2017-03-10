@@ -1,4 +1,4 @@
-from .tictactoe import TicTacToe, inspect, xy
+from .tictactoe_game import TicTacToe, inspect, xy
 
 opposite = TicTacToe.opposite
 

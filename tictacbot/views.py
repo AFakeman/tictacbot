@@ -1,8 +1,8 @@
 from telegram.ext import Filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from . import bot
-from .tictactoe import TicTacToe
-from .tictactoebot import TicTacPlayer
+from .tictactoe_game import TicTacToe
+from .tictactoe_bot import TicTacPlayer
 from .exception import ParseError, GameError
 import random
 
