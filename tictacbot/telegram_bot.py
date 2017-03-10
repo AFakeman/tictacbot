@@ -73,5 +73,5 @@ class TelegramBot:
     def process_update(self, update):
         upd_decode = update.decode("UTF-8")
         upd_loaded = json.loads(upd_decode)
-        upd_proper = Update.de_json(upd_loaded)
+        upd_proper = Update.de_json(upd_loaded, bot=None)
         self.dispatcher.process_update(upd_proper)
