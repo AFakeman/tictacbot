@@ -11,9 +11,10 @@ def print_error(bot, update, error):
 
 
 class TelegramBot:
-    def __init__(self, token):
+    def __init__(self, token, info):
         self.token = token
         self.bot = Bot(token)
+        self.info = info
         self.dispatcher = Dispatcher(self.bot, None, workers=0)
         self.help = ["/help - show this message."]
         help_handler = CommandHandler("help", self.help_func)
@@ -103,7 +104,7 @@ class TelegramBot:
     def process_update(self, update):
         decoded = update.decode("UTF-8")
         jsoned = json.loads(decoded)
-        de_json = Update.de_json(jsoned, None)
+        de_json = Update.de_json(jsoned, bot=None)
         self.dispatcher.process_update(de_json)
 
     def send(self, bot, obj, chat):

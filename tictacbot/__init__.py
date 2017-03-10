@@ -2,6 +2,8 @@ import redis
 import yaml
 import logging
 from redis_map import RedisUniterableMap
+from .telegram_bot import TelegramBot
+from .queue_worker import Worker
 
 with open("config.yml") as f:
     config = yaml.load(f)
@@ -20,12 +22,11 @@ redis_client = redis.Redis(host=REDIS_HOST,
                            db=REDIS_DB,
                            password=REDIS_PASSWORD)
 
-from .telegram_bot import TelegramBot
-telebot = TelegramBot(config["api_key"])
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 info = RedisUniterableMap(host=config["redis_host"], port=config["redis_port"], base_key="info")
+telebot = TelegramBot(config["api_key"], info=info)
+worker = Worker(telebot=telebot, redis_client=redis_client)
+
 
 from . import views
 
-from .queue_worker import Worker
-worker = Worker()
