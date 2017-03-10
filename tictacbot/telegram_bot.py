@@ -13,7 +13,7 @@ class TelegramBot:
     def __init__(self, token):
         self.token = token
         self.bot = Bot(token)
-        self.dispatcher = Dispatcher(bot, None, workers=0)
+        self.dispatcher = Dispatcher(self.bot, None, workers=0)
         self.help = ["/help - show this message."]
         help_handler = CommandHandler("help", self.help_func)
         self.dispatcher.add_handler(help_handler)
