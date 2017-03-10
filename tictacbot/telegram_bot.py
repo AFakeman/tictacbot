@@ -1,6 +1,6 @@
 from telegram.ext import Dispatcher
 from telegram.ext import CommandHandler, MessageHandler
-from telegram import bot, Update
+from telegram import Bot, Update
 from .exception import ParseError, GameError
 import logging
 import json
@@ -12,7 +12,7 @@ class TelegramBot:
 
     def __init__(self, token):
         self.token = token
-        self.bot = bot(token)
+        self.bot = Bot(token)
         self.dispatcher = Dispatcher(bot, None, workers=0)
         self.help = ["/help - show this message."]
         help_handler = CommandHandler("help", self.help_func)
