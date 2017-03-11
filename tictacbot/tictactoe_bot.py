@@ -11,7 +11,7 @@ def calculate_attr(lane, turn, field_size, at_price=2, def_price=3, reinforce_pr
     elif lane[opposite(turn)] != 0 and lane[turn] == 0:  # We should protect!
         return "def",  def_price ** lane[opposite(turn)]
     elif lane[opposite(turn)] == 0 and lane[turn] != 0:  # We should reinforce!
-        return "frc", at_price ** lane[turn]
+        return "frc", reinforce_price ** lane[turn]
     else:
         return "atk", 0
 
