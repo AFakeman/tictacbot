@@ -37,11 +37,16 @@ def arguments(*arg_types):
 )
 @arguments((int, str), (int,), ())
 def start_game(*args, restart=False, upd=None, context=None, cbq=False):
+    if len(args) == 0:
+        return "Hi! Type /start <size> to start the game, or /help for options!"
+
     if not cbq:
         username = upd.message.from_user.username
     else:
         username = upd.callback_query.from_user.username
+
     size = args[0]
+
     if len(args) == 2:
         start = args[1]
     else:
