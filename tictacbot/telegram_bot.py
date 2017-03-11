@@ -29,7 +29,6 @@ class TelegramBot:
             level=logging.INFO)
 
     def help_func(self, bot, update):
-        print("kek")
         bot.sendMessage(chat_id=update.message.chat_id, text="\n".join(self.help))
 
     def get_chat_context(self, chat_id):
