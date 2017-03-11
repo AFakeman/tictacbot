@@ -1,4 +1,4 @@
-from tictacbot import worker
+import tictacbot
 
 if __name__ == "__main__":
-    worker.work()
+    tictacbot.run()

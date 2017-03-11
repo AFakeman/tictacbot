@@ -27,6 +27,11 @@ info = RedisUniterableMap(host=config["redis_host"], port=config["redis_port"], 
 telebot = TelegramBot(config["api_key"], info=info, webhook=config["webhook"])
 worker = Worker(telebot=telebot, redis_client=redis_client)
 
+def run():
+    if config["webhook"]:
+        worker.work()
+    else:
+        telebot.run()
 
 from . import views
 
