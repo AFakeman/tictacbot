@@ -21,6 +21,7 @@ class Worker:
                 if self.redis.setnx(lock_key, 1):
                     self.redis.expire(lock_key, redis_lock_timeout)
                     update = self.redis.lindex(key, -1)
-                    self.telebot.process_update(update)
-                    self.redis.rpop(key)
+                    if update:
+                        self.telebot.process_update(update)
+                        self.redis.rpop(key)
                     self.redis.delete(lock_key)
