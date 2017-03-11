@@ -1,4 +1,4 @@
-from telegram.ext import Dispatcher
+from telegram.ext import Dispatcher, Updater
 from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
 from telegram import Bot, Update
 from .exception import ParseError, GameError
@@ -11,11 +11,16 @@ def print_error(bot, update, error):
 
 
 class TelegramBot:
-    def __init__(self, token, info):
+    def __init__(self, token, info, webhook=False):
         self.token = token
         self.bot = Bot(token)
         self.info = info
-        self.dispatcher = Dispatcher(self.bot, None, workers=0)
+        if webhook:
+            self.updater = None
+            self.dispatcher = Dispatcher(self.bot, None, workers=0)
+        else:
+            self.updater = Updater(token)
+            self.dispatcher = self.updater.dispatcher
         self.help = ["/help - show this message."]
         help_handler = CommandHandler("help", self.help_func)
         self.dispatcher.add_handler(help_handler)
@@ -106,6 +111,10 @@ class TelegramBot:
         jsoned = json.loads(decoded)
         de_json = Update.de_json(jsoned, bot=None)
         self.dispatcher.process_update(de_json)
+
+    def run(self):
+        self.updater.start_polling()
+        self.updater.idle()
 
     def send(self, bot, obj, chat):
         if isinstance(obj, str):

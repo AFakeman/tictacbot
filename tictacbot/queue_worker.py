@@ -2,6 +2,7 @@ from string import ascii_lowercase
 from .misc import random_string
 from .config import name_length, redis_workers, redis_worker_queue_root, redis_workers_alive_root
 
+
 class Worker:
     def __init__(self, redis_client, telebot):
         self.name = None

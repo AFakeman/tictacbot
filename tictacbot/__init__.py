@@ -24,7 +24,7 @@ redis_client = redis.Redis(host=REDIS_HOST,
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 info = RedisUniterableMap(host=config["redis_host"], port=config["redis_port"], base_key="info")
-telebot = TelegramBot(config["api_key"], info=info)
+telebot = TelegramBot(config["api_key"], info=info, webhook=config["webhook"])
 worker = Worker(telebot=telebot, redis_client=redis_client)
 
 

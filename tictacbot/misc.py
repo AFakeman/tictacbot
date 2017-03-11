@@ -1,14 +1,17 @@
 import random
 from .exception import ParseError
 
+
 def random_string(alphabet, length):
     result = ""
     for i in range(length):
         result += random.choice(alphabet)
     return result
 
+
 def arguments(*arg_types):
-    types = {len(pair):pair for pair in arg_types}
+    types = {len(pair): pair for pair in arg_types}
+
     def decorator(func):
         def wrapper(update, args, **kwargs):
             if len(args) not in types:
