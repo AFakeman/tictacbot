@@ -58,8 +58,8 @@ class TelegramBot:
                 except GameError as e:
                     result = str(e)
                 except ParseError as e:
-                    result = "Couldn't process arguments ({0}). \
-                              Are you sure you are typing the command correctly?".format(str(e))
+                    result = "Couldn't process arguments ({0})."\
+                              "Are you sure you are typing the command correctly?".format(str(e))
                 if result:
                     self.send(bot, result, update.message.chat_id)
             handler = CommandHandler(command, processor, pass_args=True)
