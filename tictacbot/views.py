@@ -31,7 +31,7 @@ def arguments(*arg_types):
 @bot.command_handler(
     command='start',
     doc="/start <size> (<side>) - start with a <size> cell field "
-        "(between 3 and 50), <side> is x or o. X's go first!",
+        "(between 3 and 5), <side> is x or o. X's go first!",
     pass_args=True,
     pass_context=True
 )

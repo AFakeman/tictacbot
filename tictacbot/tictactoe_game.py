@@ -23,8 +23,8 @@ def inspect(field, speed, start, field_size):
 
 class TicTacToe:
     def __init__(self, field=None, field_size=3):
-        if field_size not in range(3, 51):
-            raise GameError("Invalid field size. Field size should be between 3 and 50.")
+        if field_size not in range(3, 6):
+            raise GameError("Invalid field size. Field size should be between 3 and 5.")
         if field:
             field_data = json.loads(field)
             self.field = field_data["field"]
